@@ -721,7 +721,7 @@
     function addMessage({ type, content, createdAt = new Date().toISOString(), sender = currentSender(), guestName: providedGuestName }) {
       const newMessage = { id: generateId(), type, content, createdAt, sender };
       if (sender === 'guest') {
-        const name = (providedGuestName ?? guestName || '').trim();
+        const name = ((providedGuestName ?? guestName) || '').trim();
         newMessage.guestName = name || undefined;
       }
       messages.push(newMessage);
@@ -769,7 +769,7 @@
     }
 
     async function startRecording() {
-      if (!navigator.mediaDevices?.getUserMedia) {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
         alert('Voice notes are not supported in this browser.');
         return;
       }
@@ -1207,8 +1207,13 @@
     async function openCameraModal() {
       cameraModal.classList.add('open');
       cameraError.textContent = '';
+      const mediaDevices = navigator.mediaDevices;
+      if (!mediaDevices?.getUserMedia) {
+        cameraError.textContent = 'Camera is not supported in this browser.';
+        return;
+      }
       try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraStream = await mediaDevices.getUserMedia({ video: true });
         cameraPreview.srcObject = cameraStream;
         await cameraPreview.play();
       } catch (error) {
@@ -1272,7 +1277,11 @@
       bindViewportListeners();
     }
 
-    init();
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+      init();
+    }
   </script>
 </body>
 </html>
