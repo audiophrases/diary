@@ -345,7 +345,9 @@
     .emoji-tray {
       position: absolute;
       left: 8px;
-      top: 8px;
+      right: 8px;
+      bottom: calc(100% + 10px);
+      top: auto;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(36px, 1fr));
       gap: 6px;
@@ -359,8 +361,8 @@
       overflow: auto;
       opacity: 0;
       visibility: hidden;
-      transform: translateY(8px);
-      transition: all 0.16s ease;
+      transform: translateY(10px);
+      transition: opacity 0.16s ease, transform 0.16s ease;
       z-index: 4;
       align-items: flex-start;
       justify-items: center;
