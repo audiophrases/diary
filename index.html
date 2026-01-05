@@ -15,6 +15,7 @@
       --muted: #6b7280;
       --bubble: #ffffff;
       --bubble-self: #dcf8c6;
+      --bubble-guest: #ffffff;
       --border: rgba(0,0,0,0.06);
       --shadow: 0 10px 50px rgba(0,0,0,0.25);
     }
@@ -29,15 +30,16 @@
       color: var(--text);
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
-      padding: 32px 16px;
+      padding: 0;
     }
 
     .app {
-      width: min(1100px, 100%);
+      width: min(1200px, 100vw);
+      min-height: 100vh;
       background: #f5f3f1;
-      border-radius: 28px;
+      border-radius: 0;
       box-shadow: var(--shadow);
       overflow: hidden;
       display: grid;
@@ -55,7 +57,7 @@
       gap: 12px;
       position: sticky;
       top: 0;
-      z-index: 2;
+      z-index: 3;
     }
 
     header h1 {
@@ -63,6 +65,32 @@
       font-size: 20px;
       letter-spacing: 0.2px;
     }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill-btn {
+      border: 1px solid rgba(255,255,255,0.6);
+      background: rgba(0,0,0,0.12);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    }
+
+    .pill-btn:hover { background: rgba(0,0,0,0.2); transform: translateY(-1px); }
+    .pill-btn.secondary { border-color: rgba(255,255,255,0.35); color: #e0f2f1; }
 
     .status {
       font-size: 12px;
@@ -85,9 +113,9 @@
     }
 
     .chat {
-      background: url('data:image/svg+xml,%3Csvg width="160" height="120" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M7 14h2v2H7zM14 7h2v2h-2z" fill="%23d0c6c0" fill-opacity="0.4"/%3E%3C/svg%3E');
+      position: relative;
       background-color: var(--chat-bg);
-      padding: 20px 16px 10px;
+      padding: 24px 18px 12px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -95,16 +123,42 @@
       scroll-behavior: smooth;
     }
 
+    .chat::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(rgba(245,243,241,0.9), rgba(245,243,241,0.9)), url('WhatsApp.png');
+      background-size: 420px auto;
+      background-repeat: repeat;
+      filter: blur(0.4px);
+      opacity: 0.9;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .chat > * { position: relative; z-index: 1; }
+
     .empty {
       text-align: center;
       color: var(--muted);
       margin: 60px auto;
-      max-width: 320px;
+      max-width: 360px;
       line-height: 1.6;
-      background: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.8);
       border-radius: 18px;
       padding: 24px 20px;
       border: 1px dashed #d1d5db;
+    }
+
+    .day-label {
+      align-self: center;
+      background: rgba(7,94,84,0.12);
+      color: #065f46;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid rgba(7,94,84,0.18);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
 
     .message {
@@ -114,27 +168,24 @@
     }
 
     .bubble {
-      max-width: min(80%, 720px);
+      max-width: min(80%, 760px);
       padding: 12px 14px 10px;
       border-radius: 16px;
       background: var(--bubble);
       position: relative;
       box-shadow: 0 8px 24px rgba(0,0,0,0.08);
       border: 1px solid var(--border);
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+      cursor: pointer;
     }
 
-    .message.self {
-      justify-content: flex-end;
-    }
+    .bubble:hover { box-shadow: 0 12px 28px rgba(0,0,0,0.14); transform: translateY(-1px); }
 
-    .message.self .bubble {
-      background: var(--bubble-self);
-      border-top-right-radius: 4px;
-    }
+    .message.self { justify-content: flex-end; }
+    .message.self .bubble { background: var(--bubble-self); border-top-right-radius: 4px; }
 
-    .message:not(.self) .bubble {
-      border-top-left-radius: 4px;
-    }
+    .message.guest { justify-content: flex-start; }
+    .message.guest .bubble { background: var(--bubble-guest); border-top-left-radius: 4px; }
 
     .text {
       margin: 0 0 8px;
@@ -150,7 +201,21 @@
       color: var(--muted);
       font-size: 12px;
       gap: 12px;
+      flex-wrap: wrap;
     }
+
+    .meta .sender {
+      background: rgba(0,0,0,0.04);
+      padding: 4px 8px;
+      border-radius: 8px;
+      color: #111827;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .meta .sender.guest { color: #065f46; background: rgba(7,94,84,0.12); }
 
     button.inline {
       border: none;
@@ -162,10 +227,7 @@
       transition: background 0.2s ease, color 0.2s ease;
     }
 
-    button.inline:hover {
-      background: rgba(0,0,0,0.06);
-      color: #ef4444;
-    }
+    button.inline:hover { background: rgba(0,0,0,0.06); color: #ef4444; }
 
     .audio-player {
       display: grid;
@@ -173,6 +235,15 @@
       align-items: center;
       gap: 12px;
       margin-bottom: 8px;
+    }
+
+    .photo {
+      width: 100%;
+      max-height: 320px;
+      border-radius: 12px;
+      object-fit: cover;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
     }
 
     .pill {
@@ -198,14 +269,12 @@
 
     .controls {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto 1fr auto auto;
       gap: 10px;
       align-items: center;
     }
 
-    .input {
-      position: relative;
-    }
+    .input { position: relative; }
 
     textarea {
       width: 100%;
@@ -223,10 +292,8 @@
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
     }
 
-    textarea:focus {
-      border-color: #16a34a;
-      box-shadow: 0 0 0 4px rgba(22,163,74,0.15);
-    }
+    textarea:focus { border-color: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,0.15); }
+    textarea:disabled { background: #f3f4f6; color: #9ca3af; }
 
     .control-btn {
       height: 46px;
@@ -243,10 +310,8 @@
       transition: transform 0.1s ease, box-shadow 0.2s ease, border 0.2s ease;
     }
 
-    .control-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 18px rgba(0,0,0,0.12);
-    }
+    .control-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.12); }
+    .control-btn:disabled { cursor: not-allowed; opacity: 0.55; box-shadow: none; transform: none; }
 
     .send-btn {
       background: linear-gradient(135deg, #25d366, #128c7e);
@@ -259,11 +324,12 @@
       height: 46px;
       cursor: pointer;
       box-shadow: 0 12px 20px rgba(18,140,126,0.28);
-      transition: transform 0.1s ease, box-shadow 0.2s ease;
+      transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     }
 
     .send-btn:hover { transform: translateY(-1px); }
     .send-btn:active { transform: translateY(0); box-shadow: 0 6px 16px rgba(18,140,126,0.25); }
+    .send-btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
     .emoji-tray {
       position: absolute;
@@ -272,28 +338,24 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(36px, 1fr));
       gap: 6px;
-      padding: 10px 12px;
+      padding: 12px 12px 10px;
       background: #fff;
       border-radius: 14px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.18);
       border: 1px solid var(--border);
-      width: min(360px, calc(100vw - 40px));
-      max-height: 230px;
+      width: min(380px, calc(100vw - 40px));
+      max-height: 260px;
       overflow: auto;
       opacity: 0;
       visibility: hidden;
       transform: translateY(8px);
       transition: all 0.16s ease;
-      z-index: 1;
-      align-items: center;
+      z-index: 4;
+      align-items: flex-start;
       justify-items: center;
     }
 
-    .emoji-tray.open {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
+    .emoji-tray.open { opacity: 1; visibility: visible; transform: translateY(0); }
 
     .emoji-tray button {
       border: none;
@@ -311,11 +373,21 @@
 
     .emoji-tray button:hover { background: rgba(0,0,0,0.06); }
 
+    .emoji-group-title {
+      grid-column: 1 / -1;
+      width: 100%;
+      text-align: left;
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
     .input .emoji-toggle {
       position: absolute;
       left: 8px;
       top: 8px;
-      z-index: 2;
+      z-index: 5;
       width: 30px;
       height: 30px;
       border-radius: 50%;
@@ -333,36 +405,68 @@
       color: var(--muted);
       font-size: 13px;
       justify-content: space-between;
+      flex-wrap: wrap;
     }
 
-    .recording {
+    .recording { display: inline-flex; align-items: center; gap: 8px; color: #b91c1c; font-weight: 600; }
+    .pulse { width: 10px; height: 10px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 0 8px rgba(239,68,68,0.2); animation: pulse 1.4s infinite; }
+
+    @keyframes pulse { 0% { box-shadow: 0 0 0 6px rgba(239,68,68,0.35); } 70% { box-shadow: 0 0 0 14px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    .modal.open { display: flex; }
+
+    .modal-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 640px;
+      width: min(640px, 100%);
+      padding: 18px;
+      border: 1px solid var(--border);
+    }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .modal-header h3 { margin: 0; }
+
+    .bin-list { display: flex; flex-direction: column; gap: 12px; max-height: 360px; overflow: auto; }
+    .bin-item { border: 1px solid var(--border); padding: 12px; border-radius: 12px; background: #f9fafb; }
+    .bin-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+    .tag {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      color: #b91c1c;
-      font-weight: 600;
+      gap: 6px;
+      background: rgba(37,99,235,0.1);
+      color: #1d4ed8;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      border: 1px solid rgba(37,99,235,0.18);
     }
 
-    .pulse {
-      width: 10px;
-      height: 10px;
-      background: #ef4444;
-      border-radius: 50%;
-      box-shadow: 0 0 0 8px rgba(239,68,68,0.2);
-      animation: pulse 1.4s infinite;
-    }
+    .edit-area textarea { width: 100%; min-height: 80px; padding: 10px 12px; }
+    .edit-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 6px rgba(239,68,68,0.35); }
-      70% { box-shadow: 0 0 0 14px rgba(239,68,68,0); }
-      100% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
-    }
+    .camera-preview { width: 100%; border-radius: 14px; background: #000; aspect-ratio: 16 / 9; object-fit: contain; }
+    .camera-status { color: #b91c1c; font-weight: 600; }
 
     @media (max-width: 720px) {
-      body { padding: 0; }
       .app { border-radius: 0; min-height: 100vh; }
       .bubble { max-width: 92%; }
-      .controls { grid-template-columns: auto 1fr auto; }
+      .controls { grid-template-columns: auto 1fr auto auto; }
+      header { flex-direction: column; align-items: flex-start; }
+      .header-actions { width: 100%; justify-content: flex-start; }
     }
   </style>
 </head>
@@ -373,9 +477,13 @@
         <h1>Diary Messenger</h1>
         <div style="font-size: 13px; opacity: 0.9;">A private, local-only self chat</div>
       </div>
-      <div class="status" aria-label="Local only">
-        <span aria-hidden="true"></span>
-        Stored only on this device
+      <div class="header-actions">
+        <button class="pill-btn" id="guestToggle" aria-pressed="false">Guest: Off</button>
+        <button class="pill-btn secondary" id="binBtn" aria-label="Open recycle bin">🗑️ Recycle bin</button>
+        <div class="status" aria-label="Local only">
+          <span aria-hidden="true"></span>
+          Stored only on this device
+        </div>
       </div>
     </header>
 
@@ -389,6 +497,7 @@
           <textarea id="messageInput" placeholder="Write a diary message..." aria-label="Write a diary message"></textarea>
           <div class="emoji-tray" id="emojiTray" role="grid" aria-hidden="true"></div>
         </div>
+        <button class="control-btn" id="cameraBtn" aria-label="Open camera">📷</button>
         <button class="send-btn" id="sendBtn">Send</button>
       </div>
       <div class="row">
@@ -398,8 +507,33 @@
     </div>
   </div>
 
+  <div class="modal" id="binModal" role="dialog" aria-modal="true" aria-labelledby="binTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="binTitle">Recycle bin</h3>
+        <button class="inline" id="closeBin" aria-label="Close recycle bin">✖</button>
+      </div>
+      <div class="bin-list" id="binList"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="cameraModal" role="dialog" aria-modal="true" aria-labelledby="cameraTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="cameraTitle">Camera</h3>
+        <button class="inline" id="closeCamera" aria-label="Close camera">✖</button>
+      </div>
+      <video id="cameraPreview" class="camera-preview" autoplay playsinline muted></video>
+      <div id="cameraError" class="camera-status" style="margin: 10px 0 0 0;"></div>
+      <div class="bin-actions" style="margin-top: 12px; justify-content: flex-end;">
+        <button class="pill-btn secondary" id="capturePhoto">📸 Capture</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const storageKey = 'diary-messages';
+    const deletedStorageKey = 'diary-deleted-messages';
     const chat = document.getElementById('chat');
     const input = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -407,12 +541,33 @@
     const recordingState = document.getElementById('recordingState');
     const emojiToggle = document.getElementById('emojiToggle');
     const emojiTray = document.getElementById('emojiTray');
+    const hint = document.getElementById('hint');
+    const binBtn = document.getElementById('binBtn');
+    const binModal = document.getElementById('binModal');
+    const closeBin = document.getElementById('closeBin');
+    const binList = document.getElementById('binList');
+    const cameraBtn = document.getElementById('cameraBtn');
+    const cameraModal = document.getElementById('cameraModal');
+    const closeCamera = document.getElementById('closeCamera');
+    const cameraPreview = document.getElementById('cameraPreview');
+    const cameraError = document.getElementById('cameraError');
+    const capturePhotoBtn = document.getElementById('capturePhoto');
+    const guestToggle = document.getElementById('guestToggle');
 
     let messages = [];
+    let deletedMessages = [];
     let mediaRecorder = null;
     let audioChunks = [];
+    let cameraStream = null;
+    let guestMode = false;
+    let activeEditor = null;
 
-    const emojis = ['😀','😃','😄','😁','😆','🥹','😊','😍','😘','😇','🤔','🤗','😴','🤓','🥳','😎','😭','😅','😌','🤍','💚','💙','💛','🧡','❤️','🤎','✨','🌿','🌙','⭐','🔥','🌊','☕','🍃','📌','🧠','💭','🎧','📖','📝','🎯','🏡','🛋️','🧸','💤','🌤️','🌧️','🌈','🌸','🌻','🌵','🍀','🍂','🍁','🌊','🎈'];
+    const emojiGroups = [
+      { label: 'Smiles & moods', items: ['😀','😃','😄','😁','😆','🥹','😊','😍','😘','😇','🤔','🤗','😴','🤓','🥳','😎','😭','😅','😌'] },
+      { label: 'Hearts & spark', items: ['🤍','💚','💙','💛','🧡','❤️','🤎','✨','🧿','🪅','🧭'] },
+      { label: 'Nature & sky', items: ['🌿','🌙','🌤️','🌧️','🌈','🌸','🌻','🌵','🍀','🍂','🍁','🌊','🪼'] },
+      { label: 'Objects & cozy', items: ['☕','🍃','📌','🧠','💭','🎧','📖','📝','🎯','🏡','🛋️','🧸','💤','🛸'] }
+    ];
 
     function loadMessages() {
       try {
@@ -422,23 +577,201 @@
         console.error('Unable to load diary messages', error);
         messages = [];
       }
+
+      try {
+        const storedDeleted = localStorage.getItem(deletedStorageKey);
+        deletedMessages = storedDeleted ? JSON.parse(storedDeleted) : [];
+      } catch (error) {
+        console.error('Unable to load deleted messages', error);
+        deletedMessages = [];
+      }
     }
 
-    function persistMessages() {
+    function persistAll() {
       try {
         localStorage.setItem(storageKey, JSON.stringify(messages));
+        localStorage.setItem(deletedStorageKey, JSON.stringify(deletedMessages));
       } catch (error) {
         console.error('Unable to save diary messages', error);
       }
     }
 
-    function formatTime(dateStr) {
+    function currentSender() {
+      return guestMode ? 'guest' : 'primary';
+    }
+
+    function formatClock(dateStr) {
       const date = new Date(dateStr);
-      return date.toLocaleString(undefined, { hour: 'numeric', minute: '2-digit', weekday: 'short' });
+      return date.toLocaleString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function formatHeading(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    }
+
+    function dayKey(dateStr) {
+      return new Date(dateStr).toDateString();
+    }
+
+    function addMessage({ type, content, createdAt = new Date().toISOString(), sender = currentSender() }) {
+      const newMessage = { id: crypto.randomUUID(), type, content, createdAt, sender };
+      messages.push(newMessage);
+      persistAll();
+      renderMessages();
+    }
+
+    function moveToBin(id) {
+      const index = messages.findIndex((m) => m.id === id);
+      if (index === -1) return;
+      const [removed] = messages.splice(index, 1);
+      deletedMessages.unshift(removed);
+      persistAll();
+      renderMessages();
+      renderBin();
+    }
+
+    function restoreMessage(id) {
+      const index = deletedMessages.findIndex((m) => m.id === id);
+      if (index === -1) return;
+      const [restored] = deletedMessages.splice(index, 1);
+      messages.push(restored);
+      messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      persistAll();
+      renderMessages();
+      renderBin();
+    }
+
+    function deleteForever(id) {
+      deletedMessages = deletedMessages.filter((m) => m.id !== id);
+      persistAll();
+      renderBin();
+    }
+
+    function sendTextMessage() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        stopRecordingAndSave();
+        return;
+      }
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage({ type: 'text', content: text });
+      input.value = '';
+      input.focus();
+    }
+
+    async function startRecording() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert('Voice notes are not supported in this browser.');
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+        mediaRecorder.onstop = async () => {
+          if (!audioChunks.length) {
+            setRecordingState(false);
+            toggleComposerDisabled(false);
+            return;
+          }
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            addMessage({ type: 'audio', content: reader.result });
+            toggleComposerDisabled(false);
+          };
+          reader.readAsDataURL(blob);
+          setRecordingState(false);
+          cleanupRecorder();
+        };
+
+        mediaRecorder.start();
+        setRecordingState(true);
+      } catch (error) {
+        console.error('Recording failed', error);
+        alert('Unable to access microphone. Please allow access to record voice notes.');
+        setRecordingState(false);
+        toggleComposerDisabled(false);
+      }
+    }
+
+    function cleanupRecorder() {
+      if (!mediaRecorder) return;
+      mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+      mediaRecorder = null;
+    }
+
+    function stopRecordingAndSave() {
+      if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+      toggleComposerDisabled(true);
+      mediaRecorder.stop();
+    }
+
+    function setRecordingState(active) {
+      recordBtn.setAttribute('aria-pressed', String(active));
+      recordBtn.textContent = active ? '⏹️' : '🎙️';
+      sendBtn.textContent = active ? 'Send clip' : 'Send';
+      recordingState.innerHTML = active ? '<span class="recording"><span class="pulse"></span>Recording...</span>' : '';
+      hint.style.opacity = active ? '0.35' : '1';
+      sendBtn.disabled = false;
+    }
+
+    function toggleRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        stopRecordingAndSave();
+      } else {
+        startRecording();
+      }
+    }
+
+    function buildEmojiTray() {
+      emojiTray.innerHTML = '';
+      emojiGroups.forEach((group) => {
+        const title = document.createElement('div');
+        title.className = 'emoji-group-title';
+        title.textContent = group.label;
+        emojiTray.appendChild(title);
+        group.items.forEach((emoji) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.innerText = emoji;
+          btn.addEventListener('click', () => {
+            input.value += emoji;
+            input.focus();
+          });
+          emojiTray.appendChild(btn);
+        });
+      });
+    }
+
+    function toggleEmojiTray() {
+      const open = emojiTray.classList.toggle('open');
+      emojiTray.setAttribute('aria-hidden', String(!open));
+    }
+
+    function toggleComposerDisabled(state) {
+      input.disabled = state;
+      recordBtn.disabled = state;
+      sendBtn.disabled = state;
+      cameraBtn.disabled = state;
+      emojiToggle.disabled = state;
     }
 
     function renderMessages() {
       chat.innerHTML = '';
+      let lastDay = '';
+
       if (!messages.length) {
         const empty = document.createElement('div');
         empty.className = 'empty';
@@ -448,8 +781,21 @@
       }
 
       messages.forEach((msg) => {
+        const sender = msg.sender || 'primary';
+        const currentDay = dayKey(msg.createdAt);
+        if (currentDay !== lastDay) {
+          const label = document.createElement('div');
+          label.className = 'day-label';
+          label.textContent = formatHeading(msg.createdAt);
+          chat.appendChild(label);
+          lastDay = currentDay;
+        }
+
         const row = document.createElement('div');
-        row.className = 'message self';
+        row.className = 'message';
+        if (sender === 'primary') row.classList.add('self');
+        if (sender === 'guest') row.classList.add('guest');
+        row.dataset.id = msg.id;
 
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
@@ -477,20 +823,69 @@
           bubble.appendChild(audioWrap);
         }
 
+        if (msg.type === 'photo') {
+          const img = document.createElement('img');
+          img.className = 'photo';
+          img.src = msg.content;
+          img.alt = 'Captured photo';
+          bubble.appendChild(img);
+        }
+
         const meta = document.createElement('div');
         meta.className = 'meta';
 
+        const leftMeta = document.createElement('div');
+        leftMeta.style.display = 'flex';
+        leftMeta.style.gap = '8px';
+        leftMeta.style.alignItems = 'center';
+        leftMeta.style.flexWrap = 'wrap';
+
+        if (sender === 'guest') {
+          const guestTag = document.createElement('span');
+          guestTag.className = 'sender guest';
+          guestTag.textContent = 'Guest';
+          leftMeta.appendChild(guestTag);
+        } else {
+          const me = document.createElement('span');
+          me.className = 'sender';
+          me.textContent = 'You';
+          leftMeta.appendChild(me);
+        }
+
         const time = document.createElement('span');
-        time.textContent = formatTime(msg.createdAt);
+        time.textContent = formatClock(msg.createdAt);
+        leftMeta.appendChild(time);
+
+        const metaActions = document.createElement('div');
+        metaActions.style.display = 'inline-flex';
+        metaActions.style.gap = '6px';
 
         const del = document.createElement('button');
         del.className = 'inline';
         del.innerText = '🗑️';
         del.title = 'Delete entry';
-        del.addEventListener('click', () => deleteMessage(msg.id));
+        del.addEventListener('click', (e) => {
+          e.stopPropagation();
+          moveToBin(msg.id);
+        });
 
-        meta.append(time, del);
+        metaActions.appendChild(del);
+        meta.append(leftMeta, metaActions);
         bubble.appendChild(meta);
+
+        if (msg.type === 'text') {
+          bubble.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            openEditor(row, bubble, msg);
+          });
+          bubble.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              openEditor(row, bubble, msg);
+            }
+          });
+        }
+
         row.appendChild(bubble);
         chat.appendChild(row);
       });
@@ -498,103 +893,46 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function addMessage({ type, content }) {
-      const newMessage = {
-        id: crypto.randomUUID(),
-        type,
-        content,
-        createdAt: new Date().toISOString(),
-      };
-      messages.push(newMessage);
-      persistMessages();
-      renderMessages();
-    }
+    function openEditor(row, bubble, msg) {
+      if (activeEditor === msg.id) return;
+      activeEditor = msg.id;
+      bubble.innerHTML = '';
 
-    function deleteMessage(id) {
-      messages = messages.filter((m) => m.id !== id);
-      persistMessages();
-      renderMessages();
-    }
+      const area = document.createElement('div');
+      area.className = 'edit-area';
+      const editInput = document.createElement('textarea');
+      editInput.value = msg.content;
+      editInput.autofocus = true;
+      area.appendChild(editInput);
 
-    function sendTextMessage() {
-      const text = input.value.trim();
-      if (!text) return;
-      addMessage({ type: 'text', content: text });
-      input.value = '';
-      input.focus();
-    }
-
-    async function startRecording() {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        alert('Voice notes are not supported in this browser.');
-        return;
-      }
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) audioChunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = async () => {
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const reader = new FileReader();
-          reader.onloadend = () => addMessage({ type: 'audio', content: reader.result });
-          reader.readAsDataURL(blob);
-          setRecordingState(false);
-        };
-
-        mediaRecorder.start();
-        setRecordingState(true);
-      } catch (error) {
-        console.error('Recording failed', error);
-        alert('Unable to access microphone. Please allow access to record voice notes.');
-        setRecordingState(false);
-      }
-    }
-
-    function stopRecording() {
-      if (!mediaRecorder) return;
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach((t) => t.stop());
-      mediaRecorder = null;
-    }
-
-    function setRecordingState(active) {
-      recordBtn.setAttribute('aria-pressed', String(active));
-      recordBtn.textContent = active ? '⏹️' : '🎙️';
-      recordingState.innerHTML = active ? '<span class="recording"><span class="pulse"></span>Recording...</span>' : '';
-      document.getElementById('hint').style.opacity = active ? '0.35' : '1';
-    }
-
-    function toggleRecording() {
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        stopRecording();
-      } else {
-        startRecording();
-      }
-    }
-
-    function buildEmojiTray() {
-      emojiTray.innerHTML = '';
-      emojis.forEach((emoji) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.innerText = emoji;
-        btn.addEventListener('click', () => {
-          input.value += emoji;
-          input.focus();
-        });
-        emojiTray.appendChild(btn);
+      const actions = document.createElement('div');
+      actions.className = 'edit-actions';
+      const cancel = document.createElement('button');
+      cancel.className = 'pill-btn secondary';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeEditor = null;
+        renderMessages();
       });
-    }
 
-    function toggleEmojiTray() {
-      const open = emojiTray.classList.toggle('open');
-      emojiTray.setAttribute('aria-hidden', String(!open));
+      const save = document.createElement('button');
+      save.className = 'pill-btn';
+      save.textContent = 'Save';
+      save.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const updated = editInput.value.trim();
+        if (!updated) return;
+        msg.content = updated;
+        persistAll();
+        activeEditor = null;
+        renderMessages();
+      });
+
+      actions.append(cancel, save);
+      area.appendChild(actions);
+      bubble.appendChild(area);
+      editInput.focus();
     }
 
     function attachEvents() {
@@ -608,19 +946,179 @@
 
       recordBtn.addEventListener('click', toggleRecording);
       emojiToggle.addEventListener('click', toggleEmojiTray);
+      cameraBtn.addEventListener('click', openCameraModal);
 
-      document.addEventListener('click', (e) => {
-        if (!emojiTray.contains(e.target) && e.target !== emojiToggle) {
-          emojiTray.classList.remove('open');
-          emojiTray.setAttribute('aria-hidden', 'true');
-        }
+      document.addEventListener('click', toggleEmojiOutside);
+
+      binBtn.addEventListener('click', () => binModal.classList.add('open'));
+      closeBin.addEventListener('click', () => binModal.classList.remove('open'));
+      binModal.addEventListener('click', (e) => {
+        if (e.target === binModal) binModal.classList.remove('open');
       });
+
+      cameraModal.addEventListener('click', (e) => {
+        if (e.target === cameraModal) closeCameraModal();
+      });
+      closeCamera.addEventListener('click', closeCameraModal);
+      capturePhotoBtn.addEventListener('click', capturePhoto);
+
+      guestToggle.addEventListener('click', toggleGuestMode);
+    }
+
+    function toggleGuestMode() {
+      guestMode = !guestMode;
+      guestToggle.setAttribute('aria-pressed', String(guestMode));
+      guestToggle.textContent = guestMode ? 'Guest: On' : 'Guest: Off';
+      hint.textContent = guestMode ? 'Guest session active. Messages send as Guest and align left.' : 'Tap the mic to record a voice note or use emojis to add feeling.';
+    }
+
+    function renderBin() {
+      binList.innerHTML = '';
+      if (!deletedMessages.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'Recycle bin is empty. Deleted items will appear here until removed forever.';
+        binList.appendChild(empty);
+        return;
+      }
+
+      deletedMessages.forEach((msg) => {
+        const item = document.createElement('div');
+        item.className = 'bin-item';
+
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.gap = '8px';
+        header.style.alignItems = 'center';
+
+        const tags = document.createElement('div');
+        tags.style.display = 'flex';
+        tags.style.gap = '6px';
+        tags.style.flexWrap = 'wrap';
+
+        const typeTag = document.createElement('span');
+        typeTag.className = 'tag';
+        typeTag.textContent = msg.type;
+        tags.appendChild(typeTag);
+
+        const timeTag = document.createElement('span');
+        timeTag.className = 'tag';
+        timeTag.textContent = formatHeading(msg.createdAt);
+        tags.appendChild(timeTag);
+
+        if (msg.sender === 'guest') {
+          const guestTag = document.createElement('span');
+          guestTag.className = 'tag';
+          guestTag.textContent = 'Guest';
+          tags.appendChild(guestTag);
+        }
+
+        header.appendChild(tags);
+        item.appendChild(header);
+
+        if (msg.type === 'text') {
+          const preview = document.createElement('p');
+          preview.textContent = msg.content;
+          item.appendChild(preview);
+        }
+
+        if (msg.type === 'photo') {
+          const img = document.createElement('img');
+          img.src = msg.content;
+          img.alt = 'Deleted photo';
+          img.className = 'photo';
+          item.appendChild(img);
+        }
+
+        if (msg.type === 'audio') {
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = msg.content;
+          item.appendChild(audio);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'bin-actions';
+        const restoreBtn = document.createElement('button');
+        restoreBtn.className = 'pill-btn';
+        restoreBtn.textContent = 'Restore';
+        restoreBtn.addEventListener('click', () => restoreMessage(msg.id));
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'pill-btn secondary';
+        delBtn.textContent = 'Delete forever';
+        delBtn.addEventListener('click', () => deleteForever(msg.id));
+
+        actions.append(restoreBtn, delBtn);
+        item.appendChild(actions);
+        binList.appendChild(item);
+      });
+    }
+
+    async function openCameraModal() {
+      cameraModal.classList.add('open');
+      cameraError.textContent = '';
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraPreview.srcObject = cameraStream;
+        await cameraPreview.play();
+      } catch (error) {
+        console.error('Camera error', error);
+        cameraError.textContent = 'Unable to access camera. Please check permissions or use a supported device.';
+      }
+    }
+
+    function closeCameraModal() {
+      cameraModal.classList.remove('open');
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((t) => t.stop());
+        cameraStream = null;
+      }
+      cameraPreview.srcObject = null;
+    }
+
+    async function capturePhoto() {
+      if (!cameraStream) {
+        cameraError.textContent = 'Camera is not ready. Please allow access.';
+        return;
+      }
+      const track = cameraStream.getVideoTracks()[0];
+      try {
+        if ('ImageCapture' in window) {
+          const capture = new ImageCapture(track);
+          const blob = await capture.takePhoto();
+          const reader = new FileReader();
+          reader.onloadend = () => addMessage({ type: 'photo', content: reader.result });
+          reader.readAsDataURL(blob);
+        } else {
+          const canvas = document.createElement('canvas');
+          canvas.width = cameraPreview.videoWidth || 640;
+          canvas.height = cameraPreview.videoHeight || 360;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/png');
+          addMessage({ type: 'photo', content: dataUrl });
+        }
+        closeCameraModal();
+      } catch (error) {
+        console.error('Capture failed', error);
+        cameraError.textContent = 'Unable to capture photo right now. Please try again.';
+      }
+    }
+
+    function toggleEmojiOutside(e) {
+      if (!emojiTray.contains(e.target) && e.target !== emojiToggle) {
+        emojiTray.classList.remove('open');
+        emojiTray.setAttribute('aria-hidden', 'true');
+      }
     }
 
     function init() {
       loadMessages();
       buildEmojiTray();
       renderMessages();
+      renderBin();
       attachEvents();
     }
 
