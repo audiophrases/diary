@@ -270,19 +270,23 @@
       left: 8px;
       top: 8px;
       display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 4px;
-      padding: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(36px, 1fr));
+      gap: 6px;
+      padding: 10px 12px;
       background: #fff;
       border-radius: 14px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.18);
       border: 1px solid var(--border);
-      max-width: 260px;
+      width: min(360px, calc(100vw - 40px));
+      max-height: 230px;
+      overflow: auto;
       opacity: 0;
       visibility: hidden;
       transform: translateY(8px);
       transition: all 0.16s ease;
       z-index: 1;
+      align-items: center;
+      justify-items: center;
     }
 
     .emoji-tray.open {
@@ -294,10 +298,15 @@
     .emoji-tray button {
       border: none;
       background: transparent;
-      font-size: 18px;
+      font-size: 20px;
       cursor: pointer;
-      padding: 4px;
-      border-radius: 8px;
+      padding: 8px;
+      border-radius: 10px;
+      width: 100%;
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .emoji-tray button:hover { background: rgba(0,0,0,0.06); }
