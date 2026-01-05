@@ -585,22 +585,79 @@
       { label: 'Objects & cozy', items: ['☕','🍃','📌','🧠','💭','🎧','📖','📝','🎯','🏡','🛋️','🧸','💤','🛸'] }
     ];
 
-    function loadMessages() {
-      try {
-        const stored = localStorage.getItem(storageKey);
-        messages = stored ? JSON.parse(stored) : [];
-      } catch (error) {
-        console.error('Unable to load diary messages', error);
-        messages = [];
+    function generateId() {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
       }
+      const now = typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now();
+      const random = (crypto?.getRandomValues?.(new Uint32Array(4)) || [Date.now(), Math.random() * 1e9, now, Math.random() * 1e9])
+        .map((part) => Math.floor(part).toString(16).padStart(8, '0'))
+        .join('-');
+      return `msg-${random}`;
+    }
 
+    function backupRawStorage(key, raw) {
+      if (!raw) return;
       try {
-        const storedDeleted = localStorage.getItem(deletedStorageKey);
-        deletedMessages = storedDeleted ? JSON.parse(storedDeleted) : [];
+        localStorage.setItem(`${key}-backup`, raw);
       } catch (error) {
-        console.error('Unable to load deleted messages', error);
-        deletedMessages = [];
+        console.warn('Unable to write backup copy', error);
       }
+    }
+
+    function parseStoredJSON(key) {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch (error) {
+        console.error(`Unable to parse stored data for ${key}`, error);
+        backupRawStorage(key, raw);
+        return null;
+      }
+    }
+
+    function toEntryArray(value) {
+      if (Array.isArray(value)) return value;
+      if (value && typeof value === 'object') {
+        if (Array.isArray(value.messages)) return value.messages;
+        if (Array.isArray(value.items)) return value.items;
+        const objectValues = Object.values(value).filter((item) => typeof item === 'string' || (item && typeof item === 'object'));
+        if (objectValues.length) return objectValues;
+      }
+      if (typeof value === 'string' && value.trim()) return [value.trim()];
+      return [];
+    }
+
+    function normalizeEntry(entry) {
+      const allowedTypes = ['text', 'audio', 'photo'];
+      if (typeof entry === 'string') {
+        return { id: generateId(), type: 'text', content: entry, createdAt: new Date().toISOString(), sender: 'primary' };
+      }
+      if (!entry || typeof entry !== 'object') return null;
+      const type = allowedTypes.includes(entry.type) ? entry.type : 'text';
+      const content = typeof entry.content === 'string' ? entry.content : '';
+      if (!content) return null;
+      return {
+        id: entry.id || generateId(),
+        type,
+        content,
+        createdAt: entry.createdAt || new Date().toISOString(),
+        sender: entry.sender === 'guest' ? 'guest' : 'primary',
+        guestName: typeof entry.guestName === 'string' ? entry.guestName : undefined
+      };
+    }
+
+    function loadCollection(key) {
+      const parsed = parseStoredJSON(key);
+      const entries = toEntryArray(parsed);
+      const normalized = entries.map((entry) => normalizeEntry(entry)).filter(Boolean);
+      return normalized;
+    }
+
+    function loadMessages() {
+      messages = loadCollection(storageKey);
+      deletedMessages = loadCollection(deletedStorageKey);
     }
 
     function persistAll() {
@@ -637,7 +694,7 @@
     }
 
     function addMessage({ type, content, createdAt = new Date().toISOString(), sender = currentSender(), guestName: providedGuestName }) {
-      const newMessage = { id: crypto.randomUUID(), type, content, createdAt, sender };
+      const newMessage = { id: generateId(), type, content, createdAt, sender };
       if (sender === 'guest') {
         const name = (providedGuestName ?? guestName || '').trim();
         newMessage.guestName = name || undefined;
