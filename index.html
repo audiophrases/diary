@@ -573,7 +573,9 @@
     let audioChunks = [];
     let cameraStream = null;
     let guestMode = false;
+    let guestName = '';
     let activeEditor = null;
+    const guestNameKey = 'diary-guest-name';
 
     const emojiGroups = [
       { label: 'Smiles & moods', items: ['😀','😃','😄','😁','😆','🥹','😊','😍','😘','😇','🤔','🤗','😴','🤓','🥳','😎','😭','😅','😌'] },
@@ -633,8 +635,12 @@
       return new Date(dateStr).toDateString();
     }
 
-    function addMessage({ type, content, createdAt = new Date().toISOString(), sender = currentSender() }) {
+    function addMessage({ type, content, createdAt = new Date().toISOString(), sender = currentSender(), guestName: providedGuestName }) {
       const newMessage = { id: crypto.randomUUID(), type, content, createdAt, sender };
+      if (sender === 'guest') {
+        const name = (providedGuestName ?? guestName || '').trim();
+        newMessage.guestName = name || undefined;
+      }
       messages.push(newMessage);
       persistAll();
       renderMessages();
@@ -856,7 +862,8 @@
         if (sender === 'guest') {
           const guestTag = document.createElement('span');
           guestTag.className = 'sender guest';
-          guestTag.textContent = 'Guest';
+          const label = msg.guestName ? `Guest — ${msg.guestName}` : 'Guest';
+          guestTag.textContent = label;
           leftMeta.appendChild(guestTag);
         } else {
           const me = document.createElement('span');
@@ -979,10 +986,24 @@
     }
 
     function toggleGuestMode() {
-      guestMode = !guestMode;
+      if (!guestMode) {
+        const defaultName = guestName || localStorage.getItem(guestNameKey) || '';
+        const response = prompt('Enter a display name for this guest', defaultName);
+        if (response === null) return;
+        const trimmed = response.trim();
+        if (!trimmed) return;
+        guestName = trimmed;
+        localStorage.setItem(guestNameKey, guestName);
+        guestMode = true;
+      } else {
+        guestMode = false;
+        guestName = '';
+        localStorage.removeItem(guestNameKey);
+      }
+
       guestToggle.setAttribute('aria-pressed', String(guestMode));
-      guestToggle.textContent = guestMode ? 'Guest: On' : 'Guest: Off';
-      hint.textContent = guestMode ? 'Guest session active. Messages send as Guest and align left.' : 'Tap the mic to record a voice note or use emojis to add feeling.';
+      guestToggle.textContent = guestMode ? `Guest: ${guestName}` : 'Guest: Off';
+      hint.textContent = guestMode ? `Guest session active as ${guestName}. Messages send as Guest and align left.` : 'Tap the mic to record a voice note or use emojis to add feeling.';
     }
 
     function renderBin() {
@@ -1023,7 +1044,7 @@
         if (msg.sender === 'guest') {
           const guestTag = document.createElement('span');
           guestTag.className = 'tag';
-          guestTag.textContent = 'Guest';
+          guestTag.textContent = msg.guestName ? `Guest — ${msg.guestName}` : 'Guest';
           tags.appendChild(guestTag);
         }
 
