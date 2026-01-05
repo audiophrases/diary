@@ -28,7 +28,7 @@
                   radial-gradient(circle at 80% 0%, rgba(7,94,84,0.18), transparent 28%),
                   var(--bg);
       color: var(--text);
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: stretch;
       justify-content: center;
@@ -37,7 +37,9 @@
 
     .app {
       width: min(1200px, 100vw);
-      min-height: 100vh;
+      min-height: var(--app-height, 100dvh);
+      height: var(--app-height, 100dvh);
+      max-height: var(--app-height, 100dvh);
       background: #f5f3f1;
       border-radius: 0;
       box-shadow: var(--shadow);
@@ -121,6 +123,7 @@
       flex-direction: column;
       gap: 12px;
       scroll-behavior: smooth;
+      min-height: 0;
     }
 
     .chat::before {
@@ -300,7 +303,7 @@
       font-size: 15px;
       background: #fff;
       outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, height 0.15s ease;
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
     }
 
@@ -475,12 +478,32 @@
     .camera-preview { width: 100%; border-radius: 14px; background: #000; aspect-ratio: 16 / 9; object-fit: contain; }
     .camera-status { color: #b91c1c; font-weight: 600; }
 
-    @media (max-width: 720px) {
-      .app { border-radius: 0; min-height: 100vh; }
-      .bubble { max-width: 92%; }
-      .controls { grid-template-columns: auto 1fr auto auto; }
-      header { flex-direction: column; align-items: flex-start; }
+    @media (max-width: 900px) {
+      .app { border-radius: 0; }
+      header { flex-direction: column; align-items: flex-start; gap: 10px; }
       .header-actions { width: 100%; justify-content: flex-start; }
+    }
+
+    @media (max-width: 680px) {
+      body { align-items: stretch; }
+      .app { width: 100%; max-width: 100%; }
+      .bubble { max-width: 94%; }
+      .controls { grid-template-columns: auto 1fr auto; grid-template-areas: "record input send" "camera input send"; align-items: stretch; }
+      #recordBtn { grid-area: record; }
+      .input { grid-area: input; }
+      #cameraBtn { grid-area: camera; }
+      #sendBtn { grid-area: send; width: 100%; }
+      textarea { padding-left: 42px; }
+      .footer { padding: 12px; }
+    }
+
+    @media (max-width: 520px) {
+      header h1 { font-size: 18px; }
+      .status { width: 100%; justify-content: center; }
+      .header-actions { flex-direction: column; align-items: stretch; }
+      .controls { grid-template-columns: 1fr; grid-template-areas: "input" "record" "camera" "send"; }
+      #recordBtn, #cameraBtn, #sendBtn { width: 100%; }
+      .row { align-items: flex-start; gap: 6px; }
     }
   </style>
 </head>
@@ -577,6 +600,8 @@
     let guestName = '';
     let activeEditor = null;
     const guestNameKey = 'diary-guest-name';
+    const root = document.documentElement;
+    let viewportHandlerAttached = false;
 
     const emojiGroups = [
       { label: 'Smiles & moods', items: ['😀','😃','😄','😁','😆','🥹','😊','😍','😘','😇','🤔','🤗','😴','🤓','🥳','😎','😭','😅','😌'] },
@@ -845,6 +870,31 @@
       emojiToggle.disabled = state;
     }
 
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        chat.scrollTop = chat.scrollHeight;
+      });
+    }
+
+    function updateAppHeight() {
+      const viewport = window.visualViewport;
+      const viewportHeight = viewport ? viewport.height : 0;
+      const fallback = window.innerHeight || document.documentElement.clientHeight || 0;
+      const height = Math.max(viewportHeight, fallback);
+      root.style.setProperty('--app-height', `${height}px`);
+    }
+
+    function bindViewportListeners() {
+      if (viewportHandlerAttached) return;
+      viewportHandlerAttached = true;
+      const viewport = window.visualViewport;
+      if (viewport) {
+        viewport.addEventListener('resize', updateAppHeight);
+        viewport.addEventListener('scroll', updateAppHeight);
+      }
+      window.addEventListener('resize', updateAppHeight);
+    }
+
     function renderMessages() {
       chat.innerHTML = '';
       let lastDay = '';
@@ -968,7 +1018,7 @@
         chat.appendChild(row);
       });
 
-      chat.scrollTop = chat.scrollHeight;
+      scrollToBottom();
     }
 
     function openEditor(row, bubble, msg) {
@@ -1020,6 +1070,12 @@
           e.preventDefault();
           sendTextMessage();
         }
+      });
+      input.addEventListener('focus', () => {
+        setTimeout(() => {
+          updateAppHeight();
+          scrollToBottom();
+        }, 80);
       });
 
       recordBtn.addEventListener('click', toggleRecording);
@@ -1212,6 +1268,8 @@
       renderMessages();
       renderBin();
       attachEvents();
+      updateAppHeight();
+      bindViewportListeners();
     }
 
     init();
