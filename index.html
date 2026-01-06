@@ -34,13 +34,12 @@
     }
 
     .app {
-      width: min(1200px, 100vw);
-      min-height: var(--app-height, 100dvh);
-      height: var(--app-height, 100dvh);
-      max-height: var(--app-height, 100dvh);
-      background: radial-gradient(circle at 10% 20%, rgba(37,211,102,0.08), transparent 25%),
-                  radial-gradient(circle at 80% 0%, rgba(7,94,84,0.18), transparent 28%),
-                  var(--bg);
+      width: min(1100px, 100%);
+      min-height: 100dvh;
+      height: auto;
+      max-height: none;
+      margin: 24px auto;
+      background: transparent;
       border-radius: 0;
       box-shadow: var(--shadow);
       overflow: hidden;
@@ -479,14 +478,14 @@
     .camera-status { color: #b91c1c; font-weight: 600; }
 
     @media (max-width: 900px) {
-      .app { border-radius: 0; }
+      .app { border-radius: 0; margin: 0; }
       header { flex-direction: column; align-items: flex-start; gap: 10px; }
       .header-actions { width: 100%; justify-content: flex-start; }
     }
 
     @media (max-width: 680px) {
       body { align-items: stretch; }
-      .app { width: 100%; max-width: 100%; }
+      .app { width: 100%; max-width: 100%; margin: 0; }
       .bubble { max-width: 94%; }
       .controls { grid-template-columns: auto 1fr auto; grid-template-areas: "record input send" "camera input send"; align-items: stretch; }
       #recordBtn { grid-area: record; }
