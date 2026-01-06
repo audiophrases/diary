@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <defs>
+    <pattern id="waPattern" width="240" height="240" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.22">
+        <g transform="translate(24 26)">
+          <path d="M10 8h62a10 10 0 0 1 10 10v28a10 10 0 0 1-10 10H34l-16 12 4-12H10A10 10 0 0 1 0 46V18A10 10 0 0 1 10 8z"/>
+          <path d="M16 24h46M16 34h30"/>
+        </g>
+        <g transform="translate(150 28)">
+          <rect x="0" y="0" width="38" height="68" rx="8"/>
+          <path d="M10 10h18"/>
+          <circle cx="19" cy="58" r="3"/>
+        </g>
+        <g transform="translate(44 132)">
+          <path d="M0 22 82 0 52 78 38 48 0 22z"/>
+          <path d="M38 48 82 0"/>
+        </g>
+        <g transform="translate(154 134)">
+          <path d="M0 18 10 28 30 6"/>
+          <path d="M16 18 26 28 46 6"/>
+        </g>
+        <g transform="translate(124 102)">
+          <path d="M18 34s-18-10-18-22A10 10 0 0 1 18 6a10 10 0 0 1 18 6c0 12-18 22-18 22z"/>
+        </g>
+        <g transform="translate(28 190)">
+          <circle cx="18" cy="18" r="18"/>
+          <path d="M12 14h0M24 14h0"/>
+          <path d="M10 22c2.5 4 13.5 4 16 0"/>
+        </g>
+        <g transform="translate(176 186)">
+          <circle cx="18" cy="18" r="18"/>
+          <path d="M18 8v10l7 5"/>
+        </g>
+        <path d="M110 22c6 3 8 7 6 12"/>
+        <path d="M210 112c6 3 8 7 6 12"/>
+        <circle cx="112" cy="172" r="3"/>
+        <circle cx="92" cy="92" r="2.5"/>
+        <circle cx="206" cy="52" r="2.5"/>
+        <path d="M204 156h18"/>
+        <path d="M32 110h16"/>
+        <path d="M86 206c6-3 10-3 16 0"/>
+      </g>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#waPattern)"/>
+</svg>
