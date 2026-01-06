@@ -9,7 +9,7 @@
       color-scheme: light;
       --bg: #0b141a;
       --chat-bg: #e7ddd7;
-      --pattern-color: rgba(7, 94, 84, 0.18);
+      --pattern-color: rgba(7, 94, 84, 0.24);
       --header: #075e54;
       --accent: #25d366;
       --text: #111;
@@ -131,43 +131,16 @@
       content: "";
       position: absolute;
       inset: 0;
-      color: var(--pattern-color);
-      background-color: var(--pattern-color);
+      background:
+        linear-gradient(rgba(245,243,241,0.22), rgba(245,243,241,0.12)),
+        var(--pattern-color) url('pattern.svg');
       background-repeat: repeat;
       background-size: 240px 240px;
-      -webkit-mask-image: url('pattern.svg');
-      mask-image: url('pattern.svg');
-      -webkit-mask-repeat: repeat;
-      mask-repeat: repeat;
-      -webkit-mask-size: 240px 240px;
-      mask-size: 240px 240px;
-      background-blend-mode: multiply;
-      opacity: 0.9;
+      mix-blend-mode: multiply;
+      opacity: 0.45;
       z-index: 0;
       pointer-events: none;
       transform: translateZ(0);
-    }
-
-    @supports not (mask-image: url("")) {
-      .chat::before {
-        background-image: url('pattern.svg');
-        background-repeat: repeat;
-        background-size: 240px 240px;
-        background-position: center;
-        opacity: 0.28;
-        background-color: transparent;
-        background-blend-mode: multiply;
-      }
-    }
-
-    .chat::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(rgba(245,243,241,0.45), rgba(245,243,241,0.6));
-      background-blend-mode: screen;
-      z-index: 1;
-      pointer-events: none;
     }
 
     .chat > * { position: relative; z-index: 2; }
