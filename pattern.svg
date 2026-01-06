@@ -6,6 +6,12 @@
           <path d="M10 8h62a10 10 0 0 1 10 10v28a10 10 0 0 1-10 10H34l-16 12 4-12H10A10 10 0 0 1 0 46V18A10 10 0 0 1 10 8z"/>
           <path d="M16 24h46M16 34h30"/>
         </g>
+        <g transform="translate(88 38)">
+          <path d="M0 10a10 10 0 0 1 10-10h28a10 10 0 0 1 10 10v16a10 10 0 0 1-10 10H18l-8 6 2-6H10A10 10 0 0 1 0 26Z"/>
+          <path d="M10 14h22M10 20h18"/>
+          <path d="M26 26h12a10 10 0 0 1 10 10v10a10 10 0 0 1-10 10H34l-6 4 2-6h-8a10 10 0 0 1-10-10"/>
+          <path d="M32 32h10"/>
+        </g>
         <g transform="translate(150 28)">
           <rect x="0" y="0" width="38" height="68" rx="8"/>
           <path d="M10 10h18"/>
@@ -22,6 +28,18 @@
         <g transform="translate(124 102)">
           <path d="M18 34s-18-10-18-22A10 10 0 0 1 18 6a10 10 0 0 1 18 6c0 12-18 22-18 22z"/>
         </g>
+        <g transform="translate(16 72)">
+          <path d="M18 2C10 6 4 16 4 26s6 18 18 18c8 0 14-6 14-12C36 18 26 8 18 2z"/>
+          <path d="M6 30c8-6 16-10 26-10"/>
+        </g>
+        <g transform="translate(186 84)">
+          <path d="m12 0 2.8 7.6 8.2 0.6-6.4 5.2 2.2 8-6.8-4-6.8 4 2.2-8-6.4-5.2 8.2-0.6z"/>
+        </g>
+        <g transform="translate(112 198)">
+          <rect x="0" y="0" width="44" height="38" rx="4"/>
+          <path d="M10 4v30M18 4v30M26 4v30M34 4v30"/>
+          <path d="M10 8h24M10 14h24M10 20h24M10 26h24"/>
+        </g>
         <g transform="translate(28 190)">
           <circle cx="18" cy="18" r="18"/>
           <path d="M12 14h0M24 14h0"/>
@@ -30,6 +48,10 @@
         <g transform="translate(176 186)">
           <circle cx="18" cy="18" r="18"/>
           <path d="M18 8v10l7 5"/>
+        </g>
+        <g transform="translate(196 202)">
+          <path d="M14 2c-6 6-10 12-10 20s6 12 12 12c6 0 12-4 12-10C28 14 22 6 14 2z"/>
+          <path d="M6 20c10-2 18-2 24 2"/>
         </g>
         <path d="M110 22c6 3 8 7 6 12"/>
         <path d="M210 112c6 3 8 7 6 12"/>
