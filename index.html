@@ -118,6 +118,10 @@
     .chat {
       position: relative;
       background-color: var(--chat-bg);
+      background-image: url('pattern.svg');
+      background-repeat: repeat;
+      background-size: 240px 240px;
+      background-attachment: local;
       padding: 24px 18px 12px;
       overflow-y: auto;
       display: flex;
@@ -133,7 +137,8 @@
       inset: 0;
       background:
         linear-gradient(rgba(245,243,241,0.22), rgba(245,243,241,0.12)),
-        var(--pattern-color) url('pattern.svg');
+        var(--pattern-color);
+      background-attachment: local, local;
       background-repeat: repeat;
       background-size: 240px 240px;
       mix-blend-mode: multiply;
