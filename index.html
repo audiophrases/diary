@@ -9,6 +9,7 @@
       color-scheme: light;
       --bg: #0b141a;
       --chat-bg: #e7ddd7;
+      --pattern-color: rgba(7, 94, 84, 0.18);
       --header: #075e54;
       --accent: #25d366;
       --text: #111;
@@ -130,15 +131,33 @@
       content: "";
       position: absolute;
       inset: 0;
-      background-image: url('WhatsApp.png');
-      background-size: clamp(280px, 38vw, 520px);
+      color: var(--pattern-color);
+      background-color: var(--pattern-color);
       background-repeat: repeat;
-      background-position: center;
-      filter: blur(1px);
-      opacity: 0.28;
+      background-size: 240px 240px;
+      -webkit-mask-image: url('pattern.svg');
+      mask-image: url('pattern.svg');
+      -webkit-mask-repeat: repeat;
+      mask-repeat: repeat;
+      -webkit-mask-size: 240px 240px;
+      mask-size: 240px 240px;
+      background-blend-mode: multiply;
+      opacity: 0.9;
       z-index: 0;
       pointer-events: none;
       transform: translateZ(0);
+    }
+
+    @supports not (mask-image: url("")) {
+      .chat::before {
+        background-image: url('pattern.svg');
+        background-repeat: repeat;
+        background-size: 240px 240px;
+        background-position: center;
+        opacity: 0.28;
+        background-color: transparent;
+        background-blend-mode: multiply;
+      }
     }
 
     .chat::after {
