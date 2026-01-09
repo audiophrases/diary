@@ -1303,6 +1303,10 @@
     }
 
     function setReplyingTo(msg) {
+      if (!isAdmin) {
+        showAdminError();
+        return;
+      }
       replyingTo = {
         id: msg.id,
         sender: getSenderLabel(msg),
@@ -1351,6 +1355,10 @@
     }
 
     function openReactionPicker(bubble, row, msg) {
+      if (!isAdmin) {
+        showAdminError();
+        return;
+      }
       closeReactionPicker();
       const picker = document.createElement('div');
       picker.className = 'reaction-picker';
@@ -1362,6 +1370,10 @@
         button.textContent = emoji;
         button.addEventListener('click', (e) => {
           e.stopPropagation();
+          if (!isAdmin) {
+            showAdminError();
+            return;
+          }
           msg.reaction = emoji;
           persistAll();
           renderMessages();
@@ -1375,6 +1387,10 @@
       clearBtn.textContent = 'Clear';
       clearBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (!isAdmin) {
+          showAdminError();
+          return;
+        }
         msg.reaction = undefined;
         persistAll();
         renderMessages();
@@ -1419,6 +1435,10 @@
         }
         pressTimer = setTimeout(() => {
           bubble.dataset.longPress = 'true';
+          if (!isAdmin) {
+            showAdminError();
+            return;
+          }
           openReactionPicker(bubble, row, msg);
         }, threshold);
       });
@@ -1473,6 +1493,10 @@
         const dy = Math.abs(e.clientY - startY);
         if (dx > swipeThreshold && dy < verticalTolerance) {
           triggered = true;
+          if (!isAdmin) {
+            showAdminError();
+            return;
+          }
           setReplyingTo(msg);
         }
       });
