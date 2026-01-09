@@ -809,6 +809,7 @@
     const urlPattern = /https?:\/\/[^\s]+/g;
     const reactionOptions = ['❤️', '👍', '😂', '🔥', '🥹', '👏', '✨'];
     let activeReactionPicker = null;
+    let ignoreReactionPickerClose = false;
     let replyingTo = null;
 
     const emojiGroups = [
@@ -1327,6 +1328,7 @@
       let startX = 0;
       let startY = 0;
       let activePointerId = null;
+      let didLongPress = false;
 
       const clearPress = () => {
         if (pressTimer) {
@@ -1338,6 +1340,7 @@
       const cancelPress = () => {
         clearPress();
         activePointerId = null;
+        didLongPress = false;
       };
 
       bubble.addEventListener('pointerdown', (e) => {
@@ -1348,12 +1351,14 @@
         startX = e.clientX;
         startY = e.clientY;
         bubble.dataset.longPress = 'false';
+        didLongPress = false;
         clearPress();
         if (bubble.setPointerCapture) {
           bubble.setPointerCapture(e.pointerId);
         }
         pressTimer = setTimeout(() => {
           bubble.dataset.longPress = 'true';
+          didLongPress = true;
           openReactionPicker(bubble, row, msg);
         }, threshold);
       });
@@ -1371,6 +1376,10 @@
         if (activePointerId !== e.pointerId) return;
         clearPress();
         activePointerId = null;
+        if (didLongPress && e.pointerType === 'mouse') {
+          ignoreReactionPickerClose = true;
+        }
+        didLongPress = false;
       });
 
       bubble.addEventListener('pointerleave', cancelPress);
@@ -1850,6 +1859,10 @@
       if (!emojiTray.contains(e.target) && e.target !== emojiToggle) {
         emojiTray.classList.remove('open');
         emojiTray.setAttribute('aria-hidden', 'true');
+      }
+      if (ignoreReactionPickerClose) {
+        ignoreReactionPickerClose = false;
+        if (activeReactionPicker && !activeReactionPicker.contains(e.target)) return;
       }
       if (activeReactionPicker && !activeReactionPicker.contains(e.target)) {
         closeReactionPicker();
