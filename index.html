@@ -1343,6 +1343,7 @@
       bubble.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
         if (e.pointerType === 'mouse' && e.detail > 1) return;
+        if (e.target.closest('button') || e.target.closest('a')) return;
         activePointerId = e.pointerId;
         startX = e.clientX;
         startY = e.clientY;
