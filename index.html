@@ -664,32 +664,6 @@
     .camera-preview { width: 100%; border-radius: 14px; background: #000; aspect-ratio: 16 / 9; object-fit: contain; }
     .camera-status { color: #b91c1c; font-weight: 600; }
 
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      transform: translate(-50%, 12px);
-      background: #111827;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 999px;
-      box-shadow: 0 12px 26px rgba(0,0,0,0.3);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      z-index: 20;
-      font-size: 13px;
-      letter-spacing: 0.2px;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translate(-50%, 0);
-    }
-
-    .toast.error { background: #b91c1c; }
-    .toast.success { background: #065f46; }
-
     @media (max-width: 900px) {
       .app { border-radius: 0; }
       header { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -785,8 +759,6 @@
     </div>
   </div>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
   <script>
     const storageKey = 'diary-messages';
     const deletedStorageKey = 'diary-deleted-messages';
@@ -815,7 +787,6 @@
     const replyPreviewLabel = document.getElementById('replyPreviewLabel');
     const replyPreviewText = document.getElementById('replyPreviewText');
     const clearReply = document.getElementById('clearReply');
-    const toast = document.getElementById('toast');
 
     let messages = [];
     let deletedMessages = [];
@@ -832,8 +803,6 @@
     const reactionOptions = ['❤️', '👍', '😂', '🔥', '🥹', '👏', '✨'];
     let activeReactionPicker = null;
     let replyingTo = null;
-    let isAdmin = false;
-    let toastTimer = null;
 
     const emojiGroups = [
       {
@@ -1112,10 +1081,6 @@
     }
 
     function restoreMessage(id) {
-      if (!isAdmin) {
-        showAdminError();
-        return;
-      }
       const index = deletedMessages.findIndex((m) => m.id === id);
       if (index === -1) return;
       const [restored] = deletedMessages.splice(index, 1);
@@ -1127,10 +1092,6 @@
     }
 
     function deleteForever(id) {
-      if (!isAdmin) {
-        showAdminError();
-        return;
-      }
       deletedMessages = deletedMessages.filter((m) => m.id !== id);
       persistAll();
       renderBin();
@@ -1143,11 +1104,6 @@
       }
       const text = input.value.trim();
       if (!text) return;
-      if (handleAdminCommand(text)) {
-        input.value = '';
-        input.focus();
-        return;
-      }
       addMessage({ type: 'text', content: text });
       input.value = '';
       input.focus();
@@ -1303,10 +1259,6 @@
     }
 
     function setReplyingTo(msg) {
-      if (!isAdmin) {
-        showAdminError();
-        return;
-      }
       replyingTo = {
         id: msg.id,
         sender: getSenderLabel(msg),
@@ -1325,40 +1277,7 @@
       replyPreviewText.textContent = '';
     }
 
-    function showToast(message, variant = 'error') {
-      if (!toast) return;
-      toast.textContent = message;
-      toast.classList.remove('error', 'success');
-      toast.classList.add('show', variant);
-      if (toastTimer) clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => {
-        toast.classList.remove('show', 'error', 'success');
-      }, 2200);
-    }
-
-    function showAdminError() {
-      showToast('Admin access required.', 'error');
-    }
-
-    function handleAdminCommand(text) {
-      if (text !== '/admin') return false;
-      const response = prompt('Enter admin password');
-      if (response === null) return true;
-      if (response === 'Paris') {
-        isAdmin = true;
-        showToast('Admin mode enabled.', 'success');
-        renderBin();
-      } else {
-        showToast('Incorrect admin password.', 'error');
-      }
-      return true;
-    }
-
     function openReactionPicker(bubble, row, msg) {
-      if (!isAdmin) {
-        showAdminError();
-        return;
-      }
       closeReactionPicker();
       const picker = document.createElement('div');
       picker.className = 'reaction-picker';
@@ -1370,10 +1289,6 @@
         button.textContent = emoji;
         button.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (!isAdmin) {
-            showAdminError();
-            return;
-          }
           msg.reaction = emoji;
           persistAll();
           renderMessages();
@@ -1387,10 +1302,6 @@
       clearBtn.textContent = 'Clear';
       clearBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (!isAdmin) {
-          showAdminError();
-          return;
-        }
         msg.reaction = undefined;
         persistAll();
         renderMessages();
@@ -1435,10 +1346,6 @@
         }
         pressTimer = setTimeout(() => {
           bubble.dataset.longPress = 'true';
-          if (!isAdmin) {
-            showAdminError();
-            return;
-          }
           openReactionPicker(bubble, row, msg);
         }, threshold);
       });
@@ -1493,10 +1400,6 @@
         const dy = Math.abs(e.clientY - startY);
         if (dx > swipeThreshold && dy < verticalTolerance) {
           triggered = true;
-          if (!isAdmin) {
-            showAdminError();
-            return;
-          }
           setReplyingTo(msg);
         }
       });
@@ -1856,13 +1759,6 @@
         delBtn.className = 'pill-btn secondary';
         delBtn.textContent = 'Delete forever';
         delBtn.addEventListener('click', () => deleteForever(msg.id));
-
-        if (!isAdmin) {
-          restoreBtn.disabled = true;
-          delBtn.disabled = true;
-          restoreBtn.title = 'Admin only';
-          delBtn.title = 'Admin only';
-        }
 
         actions.append(restoreBtn, delBtn);
         item.appendChild(actions);
