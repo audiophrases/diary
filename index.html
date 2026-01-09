@@ -694,7 +694,19 @@
     @media (max-width: 520px) {
       header h1 { font-size: 18px; }
       .status { width: 100%; justify-content: center; }
-      .header-actions { flex-direction: column; align-items: stretch; }
+      .header-actions {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+        width: 100%;
+        justify-content: space-between;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+      .header-actions .pill-btn {
+        white-space: nowrap;
+        flex: 0 0 auto;
+      }
       .controls { grid-template-columns: 1fr; grid-template-areas: "input" "record" "camera" "upload" "send"; }
       #recordBtn, #cameraBtn, #uploadBtn, #sendBtn { width: 100%; }
       .row { align-items: flex-start; gap: 6px; }
