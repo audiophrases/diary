@@ -268,8 +268,8 @@
       position: absolute;
       right: 10px;
       bottom: calc(100% + 10px);
-      display: grid;
-      grid-auto-flow: column;
+      display: flex;
+      align-items: center;
       gap: 6px;
       padding: 8px 10px;
       background: #fff;
@@ -280,6 +280,10 @@
       transform: translateY(8px);
       transition: opacity 0.16s ease, transform 0.16s ease;
       z-index: 6;
+      max-width: min(90vw, 520px);
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scrollbar-width: thin;
     }
 
     .reaction-picker.open {
@@ -819,7 +823,12 @@
     const root = document.documentElement;
     let viewportHandlerAttached = false;
     const urlPattern = /https?:\/\/[^\s]+/g;
-    const reactionOptions = ['❤️', '👍', '😂', '🔥', '🥹', '👏', '✨'];
+    const reactionStorageKey = 'diary-reaction-history';
+    const reactionBaseOptions = [
+      '❤️', '😍', '🥰', '🫶', '🤍', '✨', '🔥', '💯', '👍', '👎', '👏', '🙌', '🙏', '🤝', '😂', '🤣', '🥹', '😮‍💨',
+      '😢', '😭', '🤩', '😎', '🥳', '🎉', '🤗', '🫂', '🤔', '😴', '👀'
+    ];
+    let reactionHistory = [];
     let activeReactionPicker = null;
     let ignoreReactionPickerClose = false;
     let replyingTo = null;
@@ -1028,6 +1037,41 @@
         return null;
       }
       return null;
+    }
+
+    function loadReactionHistory() {
+      const stored = parseStoredJSON(reactionStorageKey);
+      if (Array.isArray(stored)) {
+        reactionHistory = stored.filter((item) => typeof item === 'string');
+      } else {
+        reactionHistory = [];
+      }
+    }
+
+    function persistReactionHistory() {
+      try {
+        localStorage.setItem(reactionStorageKey, JSON.stringify(reactionHistory));
+      } catch (error) {
+        console.warn('Unable to save reaction history', error);
+      }
+    }
+
+    function recordReactionUse(emoji) {
+      reactionHistory = [emoji, ...reactionHistory.filter((item) => item !== emoji)];
+      reactionHistory = reactionHistory.filter((item) => reactionBaseOptions.includes(item));
+      reactionHistory = reactionHistory.slice(0, reactionBaseOptions.length);
+      persistReactionHistory();
+    }
+
+    function getReactionOptions() {
+      const seen = new Set();
+      const ordered = [];
+      [...reactionHistory, ...reactionBaseOptions].forEach((emoji) => {
+        if (!reactionBaseOptions.includes(emoji) || seen.has(emoji)) return;
+        seen.add(emoji);
+        ordered.push(emoji);
+      });
+      return ordered;
     }
 
     function buildLinkPreview(url) {
@@ -1303,13 +1347,14 @@
       picker.className = 'reaction-picker';
       if (row.classList.contains('guest')) picker.classList.add('guest');
 
-      reactionOptions.forEach((emoji) => {
+      getReactionOptions().forEach((emoji) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = emoji;
         button.addEventListener('click', (e) => {
           e.stopPropagation();
           msg.reaction = emoji;
+          recordReactionUse(emoji);
           persistAll();
           renderMessages();
         });
@@ -1883,6 +1928,7 @@
 
     function init() {
       loadMessages();
+      loadReactionHistory();
       buildEmojiTray();
       renderMessages();
       renderBin();
