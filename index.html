@@ -724,6 +724,8 @@
         <h1>Diary</h1>
       </div>
       <div class="header-actions">
+        <button class="pill-btn secondary" id="exportBtn" aria-label="Export backup">💾 Export</button>
+        <button class="pill-btn secondary" id="importBtn" aria-label="Import backup">📂 Import</button>
         <button class="pill-btn" id="guestToggle" aria-pressed="false">Guest: Off</button>
         <button class="pill-btn secondary" id="binBtn" aria-label="Open recycle bin">🗑️ Recycle bin</button>
       </div>
@@ -794,6 +796,8 @@
     const emojiTray = document.getElementById('emojiTray');
     const hint = document.getElementById('hint');
     const binBtn = document.getElementById('binBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
     const binModal = document.getElementById('binModal');
     const closeBin = document.getElementById('closeBin');
     const binList = document.getElementById('binList');
@@ -1730,6 +1734,8 @@
 
       guestToggle.addEventListener('click', toggleGuestMode);
       clearReply.addEventListener('click', clearReplyingTo);
+      exportBtn.addEventListener('click', handleExport);
+      importBtn.addEventListener('click', handleImport);
     }
 
     function toggleGuestMode() {
@@ -1751,6 +1757,66 @@
       guestToggle.setAttribute('aria-pressed', String(guestMode));
       guestToggle.textContent = guestMode ? `Guest: ${guestName}` : 'Guest: Off';
       hint.textContent = guestMode ? `Guest session active as ${guestName}. Messages send as guest and align left.` : '';
+    }
+
+    function handleExport() {
+      const data = {
+        messages,
+        deletedMessages,
+        reactionHistory,
+        guestName: localStorage.getItem(guestNameKey) || ''
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `diary-backup-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function handleImport() {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'application/json';
+      fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (Array.isArray(data.messages)) {
+              messages = data.messages;
+            }
+            if (Array.isArray(data.deletedMessages)) {
+              deletedMessages = data.deletedMessages;
+            }
+            if (Array.isArray(data.reactionHistory)) {
+              reactionHistory = data.reactionHistory;
+            }
+            if (data.guestName !== undefined) {
+              localStorage.setItem(guestNameKey, data.guestName);
+              guestName = data.guestName;
+              if (guestMode) {
+                guestToggle.textContent = `Guest: ${guestName}`;
+              }
+            }
+            persistAll();
+            persistReactionHistory();
+            renderMessages();
+            renderBin();
+            alert('Backup restored successfully!');
+          } catch (err) {
+            console.error('Import error', err);
+            alert('Failed to read the backup file. Ensure it is a valid JSON backup.');
+          }
+        };
+        reader.readAsText(file);
+      };
+      fileInput.click();
     }
 
     function renderBin() {
