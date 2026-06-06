@@ -751,6 +751,7 @@
       </div>
       <div class="header-actions">
         <button class="pill-btn" id="driveBtn" aria-label="Save backup to Google Drive">☁️ Save to Drive</button>
+        <button class="pill-btn" id="driveOpenBtn" aria-label="Open backup from Google Drive">📥 Open from Drive</button>
         <button class="pill-btn secondary" id="exportBtn" aria-label="Export backup">💾 Export</button>
         <button class="pill-btn secondary" id="importBtn" aria-label="Import backup">📂 Import</button>
         <button class="pill-btn" id="guestToggle" aria-pressed="false">Guest: Off</button>
@@ -797,6 +798,16 @@
     </div>
   </div>
 
+  <div class="modal" id="driveModal" role="dialog" aria-modal="true" aria-labelledby="driveTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="driveTitle">Open from Drive</h3>
+        <button class="inline" id="closeDrive" aria-label="Close Drive picker">✖</button>
+      </div>
+      <div class="bin-list" id="driveList"></div>
+    </div>
+  </div>
+
   <div class="modal" id="cameraModal" role="dialog" aria-modal="true" aria-labelledby="cameraTitle">
     <div class="modal-card">
       <div class="modal-header">
@@ -835,8 +846,12 @@
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
     const driveBtn = document.getElementById('driveBtn');
+    const driveOpenBtn = document.getElementById('driveOpenBtn');
     const binModal = document.getElementById('binModal');
     const closeBin = document.getElementById('closeBin');
+    const driveModal = document.getElementById('driveModal');
+    const closeDrive = document.getElementById('closeDrive');
+    const driveList = document.getElementById('driveList');
     const binList = document.getElementById('binList');
     const cameraBtn = document.getElementById('cameraBtn');
     const uploadBtn = document.getElementById('uploadBtn');
@@ -1763,6 +1778,11 @@
         if (e.target === binModal) binModal.classList.remove('open');
       });
 
+      closeDrive.addEventListener('click', () => driveModal.classList.remove('open'));
+      driveModal.addEventListener('click', (e) => {
+        if (e.target === driveModal) driveModal.classList.remove('open');
+      });
+
       cameraModal.addEventListener('click', (e) => {
         if (e.target === cameraModal) closeCameraModal();
       });
@@ -1774,6 +1794,7 @@
       exportBtn.addEventListener('click', handleExport);
       importBtn.addEventListener('click', handleImport);
       driveBtn.addEventListener('click', handleSaveToDrive);
+      driveOpenBtn.addEventListener('click', handleOpenFromDrive);
     }
 
     function toggleGuestMode() {
@@ -1972,6 +1993,144 @@
       }
     }
 
+    async function listDriveBackups(token) {
+      // The drive.file scope only exposes files this app created — i.e. our backups.
+      const q = encodeURIComponent("mimeType='application/json' and trashed=false");
+      const fields = encodeURIComponent('files(id,name,modifiedTime,size)');
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&orderBy=modifiedTime desc&pageSize=100&spaces=drive`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) {
+        if (res.status === 401) driveAccessToken = null;
+        throw new Error(`Couldn't list backups (${res.status})`);
+      }
+      return (await res.json()).files || [];
+    }
+
+    async function downloadDriveFile(token, fileId) {
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) {
+        if (res.status === 401) driveAccessToken = null;
+        throw new Error(`Download failed (${res.status})`);
+      }
+      return res.json();
+    }
+
+    function formatDriveDate(iso) {
+      try {
+        return new Date(iso).toLocaleString();
+      } catch (e) {
+        return iso || '';
+      }
+    }
+
+    function renderDriveBackups(token, files) {
+      driveList.innerHTML = '';
+      if (!files.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'No backups found in your Drive yet. Use ☁️ Save to Drive first.';
+        driveList.appendChild(empty);
+        return;
+      }
+      files.forEach((file) => {
+        const item = document.createElement('div');
+        item.className = 'bin-item';
+
+        const title = document.createElement('div');
+        title.innerHTML = `<strong>${file.name}</strong>`;
+        const meta = document.createElement('div');
+        meta.className = 'status';
+        meta.textContent = `Saved ${formatDriveDate(file.modifiedTime)}`;
+
+        const actions = document.createElement('div');
+        actions.className = 'bin-actions';
+        const restoreBtn = document.createElement('button');
+        restoreBtn.className = 'pill-btn';
+        restoreBtn.textContent = '📥 Restore this backup';
+        restoreBtn.addEventListener('click', async () => {
+          if (!confirm(`Restore "${file.name}"? This replaces your current diary contents.`)) return;
+          restoreBtn.disabled = true;
+          restoreBtn.textContent = 'Restoring…';
+          try {
+            const data = await downloadDriveFile(token, file.id);
+            applyBackup(data);
+            driveModal.classList.remove('open');
+            showToast(`✅ Restored <strong>${file.name}</strong> from your Drive.`, 'success', 7000);
+          } catch (err) {
+            console.error('Drive restore error', err);
+            restoreBtn.disabled = false;
+            restoreBtn.textContent = '📥 Restore this backup';
+            showToast(`Couldn't restore: ${err.message}`, 'error', 8000);
+          }
+        });
+
+        actions.appendChild(restoreBtn);
+        item.appendChild(title);
+        item.appendChild(meta);
+        item.appendChild(actions);
+        driveList.appendChild(item);
+      });
+    }
+
+    async function handleOpenFromDrive() {
+      if (!GOOGLE_CLIENT_ID) {
+        showToast('Drive isn\'t set up yet. Use 📂 Import to open a downloaded backup file instead.', '', 8000);
+        return;
+      }
+
+      const original = driveOpenBtn.textContent;
+      driveOpenBtn.setAttribute('aria-busy', 'true');
+      driveOpenBtn.disabled = true;
+      driveOpenBtn.textContent = '📥 Loading…';
+      showToast('Connecting to Google Drive…', '', 0);
+
+      try {
+        const token = await getDriveToken();
+        const files = await listDriveBackups(token);
+        renderDriveBackups(token, files);
+        if (toastEl) toastEl.classList.remove('show');
+        driveModal.classList.add('open');
+      } catch (err) {
+        console.error('Drive open error', err);
+        showToast(`Couldn't open Drive: ${err.message} You can use 📂 Import for a downloaded file instead.`, 'error', 9000);
+      } finally {
+        driveOpenBtn.removeAttribute('aria-busy');
+        driveOpenBtn.disabled = false;
+        driveOpenBtn.textContent = original;
+      }
+    }
+
+    function applyBackup(data) {
+      if (!data || typeof data !== 'object') {
+        throw new Error('Not a valid backup file.');
+      }
+      if (Array.isArray(data.messages)) {
+        messages = data.messages;
+      }
+      if (Array.isArray(data.deletedMessages)) {
+        deletedMessages = data.deletedMessages;
+      }
+      if (Array.isArray(data.reactionHistory)) {
+        reactionHistory = data.reactionHistory;
+      }
+      if (data.guestName !== undefined) {
+        localStorage.setItem(guestNameKey, data.guestName);
+        guestName = data.guestName;
+        if (guestMode) {
+          guestToggle.textContent = `Guest: ${guestName}`;
+        }
+      }
+      persistAll();
+      persistReactionHistory();
+      renderMessages();
+      renderBin();
+    }
+
     function handleImport() {
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
@@ -1982,27 +2141,7 @@
         const reader = new FileReader();
         reader.onload = (ev) => {
           try {
-            const data = JSON.parse(ev.target.result);
-            if (Array.isArray(data.messages)) {
-              messages = data.messages;
-            }
-            if (Array.isArray(data.deletedMessages)) {
-              deletedMessages = data.deletedMessages;
-            }
-            if (Array.isArray(data.reactionHistory)) {
-              reactionHistory = data.reactionHistory;
-            }
-            if (data.guestName !== undefined) {
-              localStorage.setItem(guestNameKey, data.guestName);
-              guestName = data.guestName;
-              if (guestMode) {
-                guestToggle.textContent = `Guest: ${guestName}`;
-              }
-            }
-            persistAll();
-            persistReactionHistory();
-            renderMessages();
-            renderBin();
+            applyBackup(JSON.parse(ev.target.result));
             alert('Backup restored successfully!');
           } catch (err) {
             console.error('Import error', err);
