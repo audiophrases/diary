@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diary</title>
+  <!-- Google Identity Services: powers one-click "Save to Google Drive" -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
       color-scheme: light;
@@ -95,6 +97,30 @@
 
     .pill-btn:hover { background: rgba(0,0,0,0.2); transform: translateY(-1px); }
     .pill-btn.secondary { border-color: rgba(255,255,255,0.35); color: #e0f2f1; }
+    .pill-btn[aria-busy="true"] { opacity: 0.7; cursor: progress; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(16px);
+      max-width: min(92vw, 420px);
+      background: #1f2d3a;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      font-size: 14px;
+      line-height: 1.4;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 1000;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #1d7a4d; }
+    .toast.error { background: #b3261e; }
+    .toast a { color: #fff; text-decoration: underline; }
 
     .status {
       font-size: 12px;
@@ -724,6 +750,7 @@
         <h1>Diary</h1>
       </div>
       <div class="header-actions">
+        <button class="pill-btn" id="driveBtn" aria-label="Save backup to Google Drive">☁️ Save to Drive</button>
         <button class="pill-btn secondary" id="exportBtn" aria-label="Export backup">💾 Export</button>
         <button class="pill-btn secondary" id="importBtn" aria-label="Import backup">📂 Import</button>
         <button class="pill-btn" id="guestToggle" aria-pressed="false">Guest: Off</button>
@@ -785,6 +812,15 @@
   </div>
 
   <script>
+    // ── Google Drive backup ────────────────────────────────────────────────
+    // Paste the OAuth Client ID you created in Google Cloud Console here.
+    // Setup (one time, ~5 min): see the GOOGLE-DRIVE-SETUP notes at the
+    // bottom of this file. Uses the drive.file scope only, so Google requires
+    // NO app verification/review. Leave blank to fall back to a plain download.
+    const GOOGLE_CLIENT_ID = '466089999361-cvakk75jq79duoan6fosus2ici46sa6q.apps.googleusercontent.com';
+    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+    const DRIVE_FOLDER_NAME = 'Diary Backups';
+
     const storageKey = 'diary-messages';
     const deletedStorageKey = 'diary-deleted-messages';
     const chat = document.getElementById('chat');
@@ -798,6 +834,7 @@
     const binBtn = document.getElementById('binBtn');
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
+    const driveBtn = document.getElementById('driveBtn');
     const binModal = document.getElementById('binModal');
     const closeBin = document.getElementById('closeBin');
     const binList = document.getElementById('binList');
@@ -1736,6 +1773,7 @@
       clearReply.addEventListener('click', clearReplyingTo);
       exportBtn.addEventListener('click', handleExport);
       importBtn.addEventListener('click', handleImport);
+      driveBtn.addEventListener('click', handleSaveToDrive);
     }
 
     function toggleGuestMode() {
@@ -1759,22 +1797,179 @@
       hint.textContent = guestMode ? `Guest session active as ${guestName}. Messages send as guest and align left.` : '';
     }
 
-    function handleExport() {
-      const data = {
+    function buildBackup() {
+      return {
         messages,
         deletedMessages,
         reactionHistory,
         guestName: localStorage.getItem(guestNameKey) || ''
       };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    }
+
+    function backupFileName() {
+      return `diary-backup-${new Date().toISOString().slice(0,10)}.json`;
+    }
+
+    function handleExport() {
+      const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `diary-backup-${new Date().toISOString().slice(0,10)}.json`;
+      a.download = backupFileName();
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    }
+
+    // ── Non-blocking toast ────────────────────────────────────────────────
+    let toastEl = null;
+    let toastTimer = null;
+    function showToast(html, type = '', durationMs = 5000) {
+      if (!toastEl) {
+        toastEl = document.createElement('div');
+        toastEl.className = 'toast';
+        toastEl.setAttribute('role', 'status');
+        toastEl.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toastEl);
+      }
+      clearTimeout(toastTimer);
+      toastEl.className = `toast ${type}`.trim();
+      toastEl.innerHTML = html;
+      // force reflow so the transition replays
+      void toastEl.offsetWidth;
+      toastEl.classList.add('show');
+      if (durationMs > 0) {
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), durationMs);
+      }
+    }
+
+    // ── Google Drive: one-click backup ────────────────────────────────────
+    let driveTokenClient = null;
+    let driveAccessToken = null;
+
+    function getDriveToken() {
+      return new Promise((resolve, reject) => {
+        if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('Google sign-in is still loading. Try again in a moment.'));
+          return;
+        }
+        if (!driveTokenClient) {
+          driveTokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: DRIVE_SCOPE,
+            callback: (resp) => {
+              if (resp && resp.access_token) {
+                driveAccessToken = resp.access_token;
+                resolve(driveAccessToken);
+              } else {
+                reject(new Error(resp && resp.error ? resp.error : 'Authorization was cancelled.'));
+              }
+            },
+            error_callback: (err) => reject(new Error(err && err.message ? err.message : 'Authorization failed.'))
+          });
+        } else {
+          driveTokenClient.callback = (resp) => {
+            if (resp && resp.access_token) {
+              driveAccessToken = resp.access_token;
+              resolve(driveAccessToken);
+            } else {
+              reject(new Error(resp && resp.error ? resp.error : 'Authorization was cancelled.'));
+            }
+          };
+        }
+        // Reuse an existing grant silently; only prompt when we have no token yet.
+        driveTokenClient.requestAccessToken({ prompt: driveAccessToken ? '' : 'consent' });
+      });
+    }
+
+    async function getOrCreateBackupFolder(token) {
+      const q = encodeURIComponent(
+        `mimeType='application/vnd.google-apps.folder' and name='${DRIVE_FOLDER_NAME}' and trashed=false`
+      );
+      const search = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!search.ok) throw new Error(`Drive search failed (${search.status})`);
+      const found = await search.json();
+      if (found.files && found.files.length) return found.files[0].id;
+
+      const create = await fetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+      });
+      if (!create.ok) throw new Error(`Could not create Drive folder (${create.status})`);
+      return (await create.json()).id;
+    }
+
+    async function uploadBackupToDrive(token) {
+      const folderId = await getOrCreateBackupFolder(token);
+      const metadata = {
+        name: backupFileName(),
+        mimeType: 'application/json',
+        parents: [folderId]
+      };
+      const fileContent = JSON.stringify(buildBackup(), null, 2);
+      const boundary = `diaryboundary${Date.now()}`;
+      const body =
+        `--${boundary}\r\n` +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) + `\r\n` +
+        `--${boundary}\r\n` +
+        'Content-Type: application/json\r\n\r\n' +
+        fileContent + `\r\n` +
+        `--${boundary}--`;
+
+      const res = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/related; boundary=${boundary}`
+          },
+          body
+        }
+      );
+      if (!res.ok) {
+        // A stale/expired token shows up as 401 — clear it so the next try re-auths.
+        if (res.status === 401) driveAccessToken = null;
+        throw new Error(`Upload failed (${res.status})`);
+      }
+      return res.json();
+    }
+
+    async function handleSaveToDrive() {
+      // No Client ID configured → degrade gracefully to a download.
+      if (!GOOGLE_CLIENT_ID) {
+        handleExport();
+        showToast('Drive isn\'t set up yet, so your backup was downloaded instead. (Admin: add a Google Client ID to enable one-click Drive save.)', '', 8000);
+        return;
+      }
+
+      const original = driveBtn.textContent;
+      driveBtn.setAttribute('aria-busy', 'true');
+      driveBtn.disabled = true;
+      driveBtn.textContent = '☁️ Saving…';
+      showToast('Connecting to Google Drive…', '', 0);
+
+      try {
+        const token = await getDriveToken();
+        const file = await uploadBackupToDrive(token);
+        const link = file.webViewLink
+          ? `<a href="${file.webViewLink}" target="_blank" rel="noopener">Open in Drive</a>`
+          : '';
+        showToast(`✅ Saved <strong>${file.name}</strong> to your Google Drive (folder “${DRIVE_FOLDER_NAME}”). ${link}`, 'success', 8000);
+      } catch (err) {
+        console.error('Drive save error', err);
+        showToast(`Couldn't save to Drive: ${err.message} Your backup wasn't lost — use 💾 Export to download it instead.`, 'error', 9000);
+      } finally {
+        driveBtn.removeAttribute('aria-busy');
+        driveBtn.disabled = false;
+        driveBtn.textContent = original;
+      }
     }
 
     function handleImport() {
@@ -2011,3 +2206,44 @@
   </script>
 </body>
 </html>
+<!--
+============================================================================
+GOOGLE-DRIVE-SETUP  —  enable one-click "☁️ Save to Drive"  (one time, ~5 min)
+============================================================================
+Until a Client ID is added below, the Drive button safely downloads a JSON
+file instead. To turn on true one-click upload to each student's own Drive:
+
+1. Go to  https://console.cloud.google.com/  and create a project
+   (any name, e.g. "Diary").
+
+2. Enable the Drive API:
+   APIs & Services → Library → search "Google Drive API" → Enable.
+
+3. Configure the OAuth consent screen:
+   APIs & Services → OAuth consent screen
+     • User type: External
+     • Fill app name / support email (your own email is fine)
+     • Scopes: you do NOT need to add any — we only use ".../auth/drive.file",
+       which is a NON-sensitive scope, so Google requires no app review.
+     • Publishing status: click "Publish app" so any student can use it
+       (while in "Testing" only emails you add as test users can sign in).
+
+4. Create the credential:
+   APIs & Services → Credentials → Create credentials → OAuth client ID
+     • Application type: Web application
+     • Authorized JavaScript origins: add the exact URL the app is served from,
+       e.g.  https://audiophrases.github.io
+       (add http://localhost:8000 too if you test locally)
+     • Create, then copy the "Client ID" (ends in .apps.googleusercontent.com)
+
+5. Paste it into the GOOGLE_CLIENT_ID constant near the top of the <script>
+   in this file, then commit/redeploy. Done.
+
+Notes:
+  • Scope drive.file = the app can only see/manage files IT creates. It cannot
+    read the student's other Drive files. Backups land in a "Diary Backups"
+    folder in the student's own Drive.
+  • Each student signs in once (Google consent), then it's a single click.
+============================================================================
+-->
+
