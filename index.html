@@ -1622,10 +1622,6 @@
           quote.append(quoteLabel, quoteText);
           if (msg.replyTo.id) {
             quote.title = 'Go to original message';
-            quote.addEventListener('click', (e) => {
-              e.stopPropagation();
-              jumpToMessage(msg.replyTo.id);
-            });
           }
           bubble.appendChild(quote);
         }
@@ -1720,15 +1716,29 @@
           bubble.appendChild(reaction);
         }
 
-        if (msg.type === 'text') {
-          bubble.addEventListener('click', (e) => {
-            if (e.target.closest('button') || e.target.closest('a')) return;
-            if (bubble.dataset.longPress === 'true') {
-              bubble.dataset.longPress = 'false';
-              return;
+        bubble.addEventListener('click', (e) => {
+          if (e.target.closest('button') || e.target.closest('a')) return;
+          if (bubble.dataset.longPress === 'true') {
+            bubble.dataset.longPress = 'false';
+            return;
+          }
+          // Tapping the embedded reply quote jumps to the original message.
+          // We test by tap location because pointer capture can retarget the
+          // click event away from the quote element itself.
+          if (msg.replyTo?.id) {
+            const quoteEl = bubble.querySelector('.reply-quote');
+            if (quoteEl) {
+              const r = quoteEl.getBoundingClientRect();
+              if (e.clientX >= r.left && e.clientX <= r.right &&
+                  e.clientY >= r.top && e.clientY <= r.bottom) {
+                jumpToMessage(msg.replyTo.id);
+                return;
+              }
             }
-            openEditor(row, bubble, msg);
-          });
+          }
+          if (msg.type === 'text') openEditor(row, bubble, msg);
+        });
+        if (msg.type === 'text') {
           bubble.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
