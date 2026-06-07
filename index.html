@@ -1353,6 +1353,17 @@
       });
     }
 
+    function jumpToMessage(id) {
+      const target = chat.querySelector(`.message[data-id="${id}"]`);
+      if (!target) return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.remove('highlight');
+      // Force reflow so the animation can replay on repeated taps.
+      void target.offsetWidth;
+      target.classList.add('highlight');
+      setTimeout(() => target.classList.remove('highlight'), 1500);
+    }
+
     function updateAppHeight() {
       const viewport = window.visualViewport;
       const viewportHeight = viewport ? viewport.height : 0;
