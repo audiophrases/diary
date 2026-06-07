@@ -273,6 +273,20 @@
       background: rgba(37,211,102,0.08);
       border-radius: 10px;
       margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    .reply-quote:hover {
+      background: rgba(37,211,102,0.16);
+    }
+
+    @keyframes jump-highlight {
+      0% { background: rgba(37,211,102,0.45); }
+      100% { background: transparent; }
+    }
+
+    .message.highlight .bubble {
+      animation: jump-highlight 1.4s ease;
     }
 
     .reply-quote .reply-author {
@@ -293,7 +307,7 @@
     .reaction-picker {
       position: absolute;
       right: 10px;
-      bottom: calc(100% + 10px);
+      top: calc(100% + 10px);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -303,7 +317,7 @@
       border: 1px solid var(--border);
       box-shadow: 0 12px 28px rgba(0,0,0,0.2);
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(-8px);
       transition: opacity 0.16s ease, transform 0.16s ease;
       z-index: 6;
       max-width: min(90vw, 520px);
@@ -1403,6 +1417,13 @@
       picker.className = 'reaction-picker';
       if (row.classList.contains('guest')) picker.classList.add('guest');
 
+      // Keep interactions inside the picker (e.g. scrolling the emoji row)
+      // from re-triggering the bubble's long-press, which would re-create the
+      // picker and snap its horizontal scroll back to the left.
+      ['pointerdown', 'pointermove', 'pointerup'].forEach((type) => {
+        picker.addEventListener(type, (e) => e.stopPropagation());
+      });
+
       getReactionOptions().forEach((emoji) => {
         const button = document.createElement('button');
         button.type = 'button';
@@ -1588,6 +1609,13 @@
           quoteText.textContent = msg.replyTo.snippet;
 
           quote.append(quoteLabel, quoteText);
+          if (msg.replyTo.id) {
+            quote.title = 'Go to original message';
+            quote.addEventListener('click', (e) => {
+              e.stopPropagation();
+              jumpToMessage(msg.replyTo.id);
+            });
+          }
           bubble.appendChild(quote);
         }
 
